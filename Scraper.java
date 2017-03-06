@@ -13,82 +13,44 @@ public class Scraper {
 	public Scraper() {}
 	
 	/**
-	 * Runs scraper. Iterates through 2014-2015, 2015-2016 seasons and records
-	 * data from each game into a .csv file named "season_data".
+	 * Runs scraper on given years. Records data using CsvWriter class.
 	 * 
-	 * TODO: Make function to iterate over games and place into season. Too
-	 * much copied code in "2014 Season", "2015 Season" sections, and if we
-	 * do it on other seasons, we'll have to copy/paste again (ew).
-	 * 
+	 * @param years list of years to run scraper on
 	 * @throws IOException on url reading error
 	 */
-	public void run() throws IOException {
-		// List of all seasons
-		ArrayList<Season> seasons = new ArrayList<Season>();
+	public void run(ArrayList<String> years) throws IOException {
+		// Convert scraped Data to .csv file.
+		CsvWriter writer = new CsvWriter();
 		// Single game to iterate over
 		Game game;
-				
-		/**************
-		 * 2014 Season *
-		  **************/
-		// List of all URL extensions from games in 2014
-		ArrayList<String> url_extensions_2014 = getUrlExtensions("2014");
-		
-		int counter = 0; //TODO: Test variable
-		Season s_2014 = new Season();
-		for(String extension : url_extensions_2014) {
-			counter++; //TODO: for testing
-			game = new Game(Integer.parseInt(extension.substring(0, 4)),
-					Integer.parseInt(extension.substring(4, 6)),
-					Integer.parseInt(extension.substring(6, 8)), 
-					Team.valueOf(extension.substring(9,12))
-					);
-			game = scrapeGame(url_base_box_score + extension, game);
-			
-			// Handling Away Team Errors
-			if(game.getAwayTeam() == null) {
-				System.out.println("NULL - " + game.toString());
-				throw new NullPointerException("Null Away Team - " + game.toString());
+
+		for(String year : years) {
+			// Test if years are valid
+			if(!(year == "2012" || year == "2013" || year == "2014" 
+					|| year == "2015" || year == "2016")) {
+				throw new IOException("Invalid Year");
+				//TODO: throw better exception
 			}
 			
-			s_2014.add(game);
-			System.out.println("Extension " + counter + " Done"); //TODO: for testing
-		}
-		
-		/**************
-		 * 2015 Season *
-		  **************/
-		// List of all URL extensions from games in 2015
-		ArrayList<String> url_extensions_2015 = getUrlExtensions("2015");
-		
-		counter = 0; //TODO: for testing
-		Season s_2015 = new Season();
-		for(String extension : url_extensions_2015) {
-			counter++; //TODO: testing
-			game = new Game(Integer.parseInt(extension.substring(0, 4)),
-					Integer.parseInt(extension.substring(4, 6)),
-					Integer.parseInt(extension.substring(6, 8)), 
-					Team.valueOf(extension.substring(9,12))
-					);
-			game = scrapeGame(url_base_box_score + extension, game);
-			
-			// Handling Away Team Errors
-			if(game.getAwayTeam() == null) {
-				System.out.println("NULL - " + game.toString());
-				throw new NullPointerException("Null Away Team - " + game.toString());
+			// List of all URL extensions
+			ArrayList<String> url_extensions = getUrlExtensions(year);
+
+			int counter = 0;
+			for(String extension : url_extensions) {
+				counter++;
+				game = new Game(Integer.parseInt(extension.substring(0, 4)),
+						Integer.parseInt(extension.substring(4, 6)),
+						Integer.parseInt(extension.substring(6, 8)), 
+						Team.valueOf(extension.substring(9,12))
+						);
+				game = scrapeGame(url_base_box_score + extension, game);
+
+				writer.write(game);
+				System.out.println(year + " Game " + counter + " Done");
 			}
-			
-			s_2015.add(game);
-			System.out.println("Extension " + counter + " Done"); //TODO: testing
 		}
 		
-		seasons.add(s_2014);
-		seasons.add(s_2015);
-		
-		//Convert scraped Data to .csv file.
-		SeasonToCSV converter = new SeasonToCSV(seasons);
-		converter.convert();
-		
+		writer.close();
 	}
 	
 	/**
@@ -139,9 +101,6 @@ public class Scraper {
 	 * Scrapes box score from a game with the given url extension. Records in
 	 * passed Game object and returns the same object.
 	 * 
-	 * TODO: Make function for iterating through table, since most of the code
-	 * is copied/pasted, as evidenced by comments repeating 4 times. It's pretty gross.
-	 * 
 	 * @param url_box_score url of game to scrape box score from
 	 * @param game Game object where data will be recorded in
 	 * @return passed Game object
@@ -158,7 +117,6 @@ public class Scraper {
 		String temp = breadcrumbs.substring(start_idx);
 		int end_idx = temp.indexOf(" at ");
 		String away_team = temp.substring(0, end_idx);
-		System.out.println(away_team); //TODO: testing
 		game.setAwayTeam(Team.fromString(away_team));
 		
 		/******************
@@ -255,6 +213,19 @@ public class Scraper {
 		game.setHomeStats(home_stats);
 		
 		return game;
+	}
+	
+	public static void main(String[] args) {
+		// create and run scraper. print any errors
+		Scraper scr = new Scraper();
+		try{
+			ArrayList<String> yrs = new ArrayList<String>();
+			yrs.add("2014");
+			yrs.add("2015");
+			scr.run(yrs);
+		} catch(IOException exc) {
+			exc.printStackTrace();
+		}
 	}
 	
 	/** Common URL for all box score websites*/
