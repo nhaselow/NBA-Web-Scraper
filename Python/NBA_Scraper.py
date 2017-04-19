@@ -135,4 +135,4 @@ def abbrev_team(team_name) :
 
 
 
-run_season((2015, 2016))
+run_season(range(2015, 2017))
