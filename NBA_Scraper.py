@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import urllib2
+import sys
 
 HEADER = "year, month, day, HOME TEAM, AWAY_TEAM, " \
 		+ "total minutes, fg, fg attempts, fg percentage, 3p, 3p attempts, 3p percentage, ft, " \
@@ -11,24 +12,37 @@ HEADER = "year, month, day, HOME TEAM, AWAY_TEAM, " \
 		+ "a.ast_p, a.stl_p, a.blk_p, a.tov_p, a.usg_p, a.or, a.dr"
 
 BASE_URL = "http://www.basketball-reference.com"
-base_url_box = BASE_URL + "boxscores/"
+
+YEAR_ONE_MONTHS = ("october", "november", "december")
+YEAR_TWO_MONTHS = ("january", "february", "march", "april")
+
 VALID_YEARS = range(1976,2018)
 
 
 
+# Returns the schedule URL for a given month/year
+def get_schedule_URL(year, month) :
+	if month in YEAR_ONE_MONTHS :
+		return BASE_URL + "/leagues/NBA_" + str(year) + "_games-" + month + ".html"
+	else :
+		return BASE_URL + "/leagues/NBA_" + str(year + 1) + "_games-" + month + ".html"
+
+  
+  
 # Returns a list of all url extensions from a given 
 # season. Scrapes links to all box score pages during 
 # season and returns the extensions in an array
 def get_season_URLs(year) :
+
 	if not year in VALID_YEARS :
 		print str(year) + " is an invalid year"
 		return
-	base_url_schedule = BASE_URL + "/leagues/NBA_" + str(year) + "_games-"
-	url_extensions = ("october", "november", "december", \
-					  "january", "february", "march", "april")
+	base_url_schedule_1 = BASE_URL + "/leagues/NBA_" + str(year) + "_games-"
+	url_extensions = YEAR_ONE_MONTHS + YEAR_TWO_MONTHS	  
 	urls = []
+
 	for extension in url_extensions :
-		schedule_url = base_url_schedule + extension + ".html"
+		schedule_url = get_schedule_URL(year, extension)
 		doc = BeautifulSoup(urllib2.urlopen(schedule_url).read(), "html.parser")
 		schedule_table = doc.find_all("tbody")[0]
 		box_score_els = schedule_table.find_all(attrs={"data-stat": "box_score_text"})
@@ -39,10 +53,15 @@ def get_season_URLs(year) :
 
 
 
-# Scrapes a box score from a game with the given
-# url. Records in file f.
+# Scrapes a box score from a game with the given url. Records in 
+# file f. Returns False and doesn't record if it's a Playoff game,
+# returns True otherwise
 def scrape_game(url, f) :
-	doc = BeautifulSoup(urllib2.urlopen(url).read(), "html.parser")
+
+	html = urllib2.urlopen(url).read()
+	doc = BeautifulSoup(html, "html.parser")
+	if not len(doc.find_all(attrs={"data-label":"All Games in Series"})) == 0 :
+		return False
 	line = ""
 
 	#################
@@ -78,6 +97,8 @@ def scrape_game(url, f) :
 				line = line + stat.get_text() + ","
 	f.write(line[:-1] + "\n")
 
+	return True
+
 
 
 # Runs scraper on given years and records in file titled "nba_data.txt"
@@ -88,7 +109,8 @@ def run_season(years) :
 		game_count = 1
 		urls = get_season_URLs(year)
 		for url in urls :
-			scrape_game(url, f)
+			if not scrape_game(url, f) :
+				break
 			print str(year) + "-" + str(year+1) + " Game no." \
 							+ str(game_count) + " done."
 			game_count = game_count + 1
@@ -97,6 +119,9 @@ def run_season(years) :
 
 
 
+
+# Converts full team name to abbreviated name. Returns error string if
+# full name does not exist
 def abbrev_team(team_name) :
 	return {
 		"Atlanta Hawks" : "ATL",
@@ -135,4 +160,20 @@ def abbrev_team(team_name) :
 
 
 
-run_season(range(2015, 2017))
+ ########
+## Main ##
+ ########
+if  (
+		len(sys.argv) != 3
+		or not (sys.argv[1].isdigit() and sys.argv[2].isdigit())
+	) :
+	sys.exit("Usage: " + sys.argv[0] + " start_year end_year")
+
+start_year = int(sys.argv[1])
+end_year = int(sys.argv[2])
+
+if  (start_year > end_year) :
+	sys.exit("Error: start_year " + sys.argv[1] + " is after end_year " + sys.argv[2])
+
+print("Running seasons " + str(start_year) + " and " + str(end_year))
+run_season(range(start_year, end_year + 1))
