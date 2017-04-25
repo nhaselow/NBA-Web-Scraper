@@ -33,17 +33,21 @@ def get_season_URLs(year) :
 		doc = BeautifulSoup(urllib2.urlopen(schedule_url).read(), "html.parser")
 		schedule_table = doc.find_all("tbody")[0]
 		box_score_els = schedule_table.find_all(attrs={"data-stat": "box_score_text"})
-
 		for el in box_score_els :
 			urls.append(BASE_URL + el.find("a").get('href'))
 	return urls
 
 
 
-# Scrapes a box score from a game with the given
-# url. Records in file f.
+# Scrapes a box score from a game with the given url. Records in 
+# file f. Returns False and doesn't record if it's a Playoff game,
+# returns True otherwise
 def scrape_game(url, f) :
-	doc = BeautifulSoup(urllib2.urlopen(url).read(), "html.parser")
+
+	html = urllib2.urlopen(url).read()
+	doc = BeautifulSoup(html, "html.parser")
+	if not len(doc.find_all(attrs={"data-label":"All Games in Series"})) == 0 :
+		return False
 	line = ""
 
 	#################
@@ -78,6 +82,7 @@ def scrape_game(url, f) :
 			if(stat.get_text() != "") : # Trad Stat table has an empty column
 				line = line + stat.get_text() + ","
 	f.write(line[:-1] + "\n")
+	return True
 
 
 
@@ -89,7 +94,8 @@ def run_season(years) :
 		game_count = 1
 		urls = get_season_URLs(year)
 		for url in urls :
-			scrape_game(url, f)
+			if not scrape_game(url, f) :
+				break
 			print str(year) + "-" + str(year+1) + " Game no." \
 							+ str(game_count) + " done."
 			game_count = game_count + 1
