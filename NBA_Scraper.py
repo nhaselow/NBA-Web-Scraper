@@ -12,8 +12,18 @@ HEADER = "year, month, day, HOME TEAM, AWAY_TEAM, " \
 		+ "a.ast_p, a.stl_p, a.blk_p, a.tov_p, a.usg_p, a.or, a.dr"
 
 BASE_URL = "http://www.basketball-reference.com"
-base_url_box = BASE_URL + "boxscores/"
+YEAR_ONE_MONTHS = ("october", "november", "december")
+YEAR_TWO_MONTHS = ("january", "february", "march", "april")
 VALID_YEARS = range(1976,2018)
+
+
+
+# Returns the schedule URL for a given month/year
+def get_schedule_URL(year, month) :
+	if month in YEAR_ONE_MONTHS :
+		return BASE_URL + "/leagues/NBA_" + str(year) + "_games-" + month + ".html"
+	else :
+		return BASE_URL + "/leagues/NBA_" + str(year + 1) + "_games-" + month + ".html"
 
 
 
@@ -21,15 +31,16 @@ VALID_YEARS = range(1976,2018)
 # season. Scrapes links to all box score pages during 
 # season and returns the extensions in an array
 def get_season_URLs(year) :
+
 	if not year in VALID_YEARS :
 		print str(year) + " is an invalid year"
 		return
-	base_url_schedule = BASE_URL + "/leagues/NBA_" + str(year) + "_games-"
-	url_extensions = ("october", "november", "december", \
-					  "january", "february", "march", "april")
+	base_url_schedule_1 = BASE_URL + "/leagues/NBA_" + str(year) + "_games-"
+	url_extensions = YEAR_ONE_MONTHS + YEAR_TWO_MONTHS	  
 	urls = []
+
 	for extension in url_extensions :
-		schedule_url = base_url_schedule + extension + ".html"
+		schedule_url = get_schedule_URL(year, extension)
 		doc = BeautifulSoup(urllib2.urlopen(schedule_url).read(), "html.parser")
 		schedule_table = doc.find_all("tbody")[0]
 		box_score_els = schedule_table.find_all(attrs={"data-stat": "box_score_text"})
