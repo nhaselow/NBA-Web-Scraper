@@ -12,8 +12,10 @@ HEADER = "year, month, day, HOME TEAM, AWAY_TEAM, " \
 		+ "a.ast_p, a.stl_p, a.blk_p, a.tov_p, a.usg_p, a.or, a.dr"
 
 BASE_URL = "http://www.basketball-reference.com"
+
 YEAR_ONE_MONTHS = ("october", "november", "december")
 YEAR_TWO_MONTHS = ("january", "february", "march", "april")
+
 VALID_YEARS = range(1976,2018)
 
 
@@ -25,8 +27,8 @@ def get_schedule_URL(year, month) :
 	else :
 		return BASE_URL + "/leagues/NBA_" + str(year + 1) + "_games-" + month + ".html"
 
-
-
+  
+  
 # Returns a list of all url extensions from a given 
 # season. Scrapes links to all box score pages during 
 # season and returns the extensions in an array
@@ -44,6 +46,7 @@ def get_season_URLs(year) :
 		doc = BeautifulSoup(urllib2.urlopen(schedule_url).read(), "html.parser")
 		schedule_table = doc.find_all("tbody")[0]
 		box_score_els = schedule_table.find_all(attrs={"data-stat": "box_score_text"})
+
 		for el in box_score_els :
 			urls.append(BASE_URL + el.find("a").get('href'))
 	return urls
@@ -93,6 +96,7 @@ def scrape_game(url, f) :
 			if(stat.get_text() != "") : # Trad Stat table has an empty column
 				line = line + stat.get_text() + ","
 	f.write(line[:-1] + "\n")
+
 	return True
 
 
@@ -112,6 +116,7 @@ def run_season(years) :
 			game_count = game_count + 1
 	print "Data Collection Complete - nba_data.txt"
 	f.close()
+
 
 
 
@@ -172,4 +177,3 @@ if  (start_year > end_year) :
 
 print("Running seasons " + str(start_year) + " and " + str(end_year))
 run_season(range(start_year, end_year + 1))
-
