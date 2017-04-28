@@ -2,13 +2,13 @@ from bs4 import BeautifulSoup
 import urllib2
 import sys
 
-HEADER = "year, month, day, HOME TEAM, AWAY_TEAM, " \
-		+ "total minutes, fg, fg attempts, fg percentage, 3p, 3p attempts, 3p percentage, ft, " \
-		+ "ft attempts, ft percentage, orb, drb, trb, ast, stl, blk, tov, pf, pts, total minutes (2), " \
+HEADER = "year, month, day, HOME_TEAM, AWAY_TEAM, " \
+		+ "total_minutes, fg, fg_attempts, fg_percentage, 3p, 3p_attempts, 3p_percentage, ft, " \
+		+ "ft_attempts, ft_percentage, orb, drb, trb, ast, stl, blk, tov, pf, pts, total_minutes(2), " \
 		+ "ts, efg, three_ar, ft_ar, orb_p, drb_p, trb_p, ast_p, stl_p, blk_p, tov_p, usg_p, or, dr, " \
-		+ "a.total minutes, a.fg, a.fg attempts, a.fg percentage, a.3p, a.3p attempts, a.3p percentage, " \
-		+ "a.ft, a.ft attempts, a.ft percentage, a.orb, a.drb, a.trb, a.ast, a.stl, a.blk, a.tov, a.pf, " \
-		+ "a.pts, a.total minutes (2), a.ts, a.efg, a.three_ar, a.ft_ar, a.orb_p, a.drb_p, a.trb_p, " \
+		+ "a.total_minutes, a.fg, a.fg_attempts, a.fg_percentage, a.3p, a.3p_attempts, a.3p_percentage, " \
+		+ "a.ft, a.ft_attempts, a.ft_percentage, a.orb, a.drb, a.trb, a.ast, a.stl, a.blk, a.tov, a.pf, " \
+		+ "a.pts, a.total_minutes(2), a.ts, a.efg, a.three_ar, a.ft_ar, a.orb_p, a.drb_p, a.trb_p, " \
 		+ "a.ast_p, a.stl_p, a.blk_p, a.tov_p, a.usg_p, a.or, a.dr"
 
 BASE_URL = "http://www.basketball-reference.com"
@@ -88,22 +88,22 @@ def scrape_game(url, f) :
 	# Record Stats #
 	 ###############
 	tables = doc.find_all("tfoot")
-	line = line + year + "," + month + "," + day + "," + home_team_abbrev \
-				+ "," + abbrev_team(str(away_team_name)) + ","
+	line = line + year + ", " + month + ", " + day + ", " + home_team_abbrev \
+				+ ", " + abbrev_team(str(away_team_name)) + ", "
 	for table in tables :
 		stats = table.find_all("td")
 		for stat in stats :
 			if(stat.get_text() != "") : # Trad Stat table has an empty column
-				line = line + stat.get_text() + ","
-	f.write(line[:-1] + "\n")
+				line = line + stat.get_text() + ", "
+	f.write(line[:-2] + "\n")
 
 	return True
 
 
 
-# Runs scraper on given years and records in file titled "nba_data.txt"
+# Runs scraper on given years and records in file titled "nba_data.csv"
 def run_season(years) :
-	f = open("nba_data.txt", "w")
+	f = open("nba_data.csv", "w")
 	f.write(HEADER + "\n")
 	for year in years :
 		game_count = 1
@@ -111,10 +111,10 @@ def run_season(years) :
 		for url in urls :
 			if not scrape_game(url, f) :
 				break
-			print str(year) + "-" + str(year+1) + " Game no." \
+			print str(year-1) + "-" + str(year) + " Game no." \
 							+ str(game_count) + " done."
 			game_count = game_count + 1
-	print "Data Collection Complete - nba_data.txt"
+	print "Data Collection Complete - nba_data.csv"
 	f.close()
 
 
@@ -175,5 +175,15 @@ end_year = int(sys.argv[2])
 if  (start_year > end_year) :
 	sys.exit("Error: start_year " + sys.argv[1] + " is after end_year " + sys.argv[2])
 
-print("Running seasons " + str(start_year) + " and " + str(end_year))
-run_season(range(start_year, end_year + 1))
+if start_year == end_year :
+	print "Running season " + str(start_year)
+else :
+	print("Running seasons " + str(start_year) + " to " + str(end_year))
+
+try :
+	run_season(range(start_year, end_year + 1))
+except KeyboardInterrupt :
+	print "\nScraping Halted.\nWarning: nba_data.csv is incomplete."
+	
+sys.exit(0)
+
