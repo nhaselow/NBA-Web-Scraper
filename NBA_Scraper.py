@@ -64,29 +64,20 @@ def scrape_game(url, f) :
 		return False
 	line = ""
 
-	#################
-	# Find Away Team #
-	 #################
+	# Find Away Team
 	breadcrumbs = doc.find_all("div", class_="breadcrumbs")[0]
 	game_head = breadcrumbs.find_all("span", itemprop="name")[1].get_text()
 	away_team_name = game_head[:game_head.find(" at ")]
 
-	#################
-	# Find Game Date #
-	 #################
+	# Find Game Date
 	year = url[url.find('res/')+4:url.find('res/')+8]
 	month = url[url.find(year)+4:url.find(year)+6]
 	day = url[url.find(year)+6:url.find(year)+8]
 
-	#################
-	# Find Home Team #
-	 #################
-	
+	# Find Home Team
 	home_team_abbrev = url[url.find(year)+9:url.find(year)+12]
 
-	###############
-	# Record Stats #
-	 ###############
+	# Record Stats
 	tables = doc.find_all("tfoot")
 	line = line + year + ", " + month + ", " + day + ", " + home_team_abbrev \
 				+ ", " + abbrev_team(str(away_team_name)) + ", "
@@ -160,9 +151,11 @@ def abbrev_team(team_name) :
 
 
 
- ########
-## Main ##
- ########
+#######
+# Main #
+ #######
+
+# Input Checking
 if  (
 		len(sys.argv) != 3
 		or not (sys.argv[1].isdigit() and sys.argv[2].isdigit())
@@ -172,14 +165,16 @@ if  (
 start_year = int(sys.argv[1])
 end_year = int(sys.argv[2])
 
-if  (start_year > end_year) :
+if start_year > end_year :
 	sys.exit("Error: start_year " + sys.argv[1] + " is after end_year " + sys.argv[2])
 
+# Run Script
 if start_year == end_year :
 	print "Running season " + str(start_year)
 else :
 	print("Running seasons " + str(start_year) + " to " + str(end_year))
 
+# Smoothly catch interrupts
 try :
 	run_season(range(start_year, end_year + 1))
 except KeyboardInterrupt :
